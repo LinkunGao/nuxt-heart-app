@@ -10,66 +10,29 @@
           Welcome to the Vuetify + Nuxt.js template
         </v-card-title>
         <v-card-text>
-          <p>Vuetify is a progressive Material Design component framework for Vue.js. It was designed to empower developers to create amazing applications.</p>
-          <p>
-            For more information on Vuetify, check out the <a
-              href="https://vuetifyjs.com"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              documentation
-            </a>.
-          </p>
-          <p>
-            If you have questions, please join the official <a
-              href="https://chat.vuetifyjs.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-              title="chat"
-            >
-              discord
-            </a>.
-          </p>
-          <p>
-            Find a bug? Report it on the github <a
-              href="https://github.com/vuetifyjs/vuetify/issues"
-              target="_blank"
-              rel="noopener noreferrer"
-              title="contribute"
-            >
-              issue board
-            </a>.
-          </p>
-          <p>Thank you for developing with Vuetify and I look forward to bringing more exciting features in the future.</p>
-          <div class="text-xs-right">
-            <em><small>&mdash; John Leider</small></em>
-          </div>
-          <hr class="my-3">
-          <a
-            href="https://nuxtjs.org/"
-            target="_blank"
-            rel="noopener noreferrer"
+          <button
+            class="grid-child"
+            id="btn-kiwrious-connect"
+            ref="btn_kiwrious_connect"
           >
-            Nuxt Documentation
-          </a>
-          <br>
-          <a
-            href="https://github.com/nuxt/nuxt.js"
-            target="_blank"
-            rel="noopener noreferrer"
+            Connect Kiwrious
+          </button>
+          <button
+            class="grid-child"
+            id="btn-kiwrious-disconnect"
+            ref="btn_kiwrious_disconnect"
           >
-            Nuxt GitHub
-          </a>
+            Disconnect Kiwrious
+          </button>
+          <div
+            class="rightChartDescription"
+            id="kiwrious-value"
+            ref="kiwriousValues"
+          ></div>
         </v-card-text>
         <v-card-actions>
           <v-spacer />
-          <v-btn
-            color="primary"
-            nuxt
-            to="/inspire"
-          >
-            Continue
-          </v-btn>
+          <v-btn color="primary" nuxt to="/inspire"> Continue </v-btn>
         </v-card-actions>
       </v-card>
     </v-col>
@@ -77,7 +40,60 @@
 </template>
 
 <script>
+// import { setWasm, setBinUrl } from "copper3d_plugin_heartjs_config";
+// console.log("aaaa", setBinUrl);
+// import * as Copper from "gltfloader-plugin-test";
+
 export default {
-  name: 'IndexPage'
-}
+  name: "IndexPage",
+  connect: null,
+  disconnect: null,
+  kiwriousValue: null,
+  Copper: null,
+
+  mounted() {
+    // this.Copper = require("gltfloader-plugin-test");
+    this.Copper = this.$Copper();
+    this.connect = this.$refs.btn_kiwrious_connect;
+    this.disconnect = this.$refs.btn_kiwrious_disconnect;
+    this.kiwriousValue = this.$refs.kiwriousValues;
+    this.startKiwrious();
+  },
+  methods: {
+    startKiwrious() {
+      console.log(this.Copper);
+      this.Copper.kiwrious.setBinUrl("kiwrious-config/prog.bin");
+      this.Copper.kiwrious.setWasm("kiwrious-config/libunicorn.out.wasm");
+
+      this.Copper.kiwrious.serialService.onSerialConnection = (isConnected) => {
+        console.log(isConnected);
+        this.connect.style.display = isConnected ? "none" : "block";
+        this.disconnect.style.display = isConnected ? "block" : "none";
+      };
+      this.connect.onclick = async () => {
+        this.connect.disabled = true;
+        await this.Copper.kiwrious.serialService.connectAndReadAsync();
+        this.connect.disabled = false;
+      };
+      this.disconnect.onclick = async () => {
+        this.disconnect.disabled = true;
+        await this.Copper.kiwrious.serialService.disconnectAsync();
+        this.disconnect.disabled = false;
+      };
+      this.Copper.kiwrious.serialService.onSerialData = (decodedData) => {
+        const values = decodedData.decodedValues;
+
+        const val = values[0].value;
+        const status = val.status;
+        const hrVal = val.heartrate;
+
+        this.kiwriousValue.innerText = status;
+
+        if (status === "Ready") {
+          this.kiwriousValue.innerText = (hrVal / 2).toString();
+        }
+      };
+    },
+  },
+};
 </script>

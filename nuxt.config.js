@@ -24,7 +24,7 @@ export default {
   css: [],
 
   // Plugins to run before rendering page: https://go.nuxtjs.dev/config-plugins
-  plugins: [],
+  plugins: [{ src: "~/plugins/copper.js", ssr: false }],
 
   // Auto import components: https://go.nuxtjs.dev/config-components
   components: true,
@@ -58,12 +58,22 @@ export default {
   },
 
   // Build Configuration: https://go.nuxtjs.dev/config-build
-  build: {},
+  build: {
+    extend(config) {
+      config.module.rules.push({
+        test: /\.(wasm|bin)$/,
+        loader: "file-loader",
+        options: {
+          esModule: false,
+        },
+      });
+    },
+  },
   router: {
-    base: "/nuxt-heart-vue/",
+    base: "/nuxt-heart-app/",
   },
-  generate: {
-    dir: "docs",
-    // subFolders: false,
-  },
+  // generate: {
+  //   dir: "build",
+  //   // subFolders: false,
+  // },
 };
